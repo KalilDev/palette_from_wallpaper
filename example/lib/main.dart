@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-import 'package:flutter/services.dart';
 import 'package:palette_from_wallpaper/palette_from_wallpaper.dart';
 
 void main() {
-  runApp(MyApp());
+  runPlatformThemedApp(
+    MyApp(),
+    onError: (e) => PlatformPalette(primaryColor: Colors.red),
+    initialOrFallback: () => PlatformPalette(primaryColor: Colors.blue),
+    startEagerly: true,
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -14,9 +18,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  PlatformPalette? _platformPalette;
-  Object? error;
   StreamSubscription? subscription;
+  final scaffold = GlobalKey<ScaffoldState>();
 
   void dispose() {
     subscription?.cancel();
@@ -26,7 +29,8 @@ class _MyAppState extends State<MyApp> {
     if (!mounted) {
       return;
     }
-    setState(() => _platformPalette = palette);
+    scaffold.currentState!
+        .showSnackBar(SnackBar(content: Text('Updated theme!')));
   }
 
   @override
@@ -36,26 +40,11 @@ class _MyAppState extends State<MyApp> {
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    PlatformPalette? platformPalette;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
+  void initPlatformState() {
     try {
-      platformPalette = await PaletteFromWallpaper.getPalette();
-    } on PlatformException catch (e) {
-      error = e;
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-    subscription =
-        PaletteFromWallpaper.paletteUpdates.listen(_onPlatformUpdate);
-
-    setState(() {
-      _platformPalette = platformPalette;
-    });
+      subscription =
+          PaletteFromWallpaper.paletteUpdates.listen(_onPlatformUpdate);
+    } on Object {}
   }
 
   Widget square(Color? color) => Expanded(
@@ -74,17 +63,17 @@ class _MyAppState extends State<MyApp> {
         children: [
           Row(
             children: [
-              square(_platformPalette!.primaryColor),
-              square(_platformPalette!.secondaryColor),
-              square(_platformPalette!.tertiaryColor),
+              square(context.palette.primaryColor),
+              square(context.palette.secondaryColor),
+              square(context.palette.tertiaryColor),
             ],
             mainAxisSize: MainAxisSize.max,
           ),
-          if (_platformPalette!.colorHints != null) ...[
+          if (context.palette.colorHints != null) ...[
             Text('HINT_SUPPORTS_DARK_TEXT: '
-                '${_platformPalette!.colorHints! & PlatformPalette.HINT_SUPPORTS_DARK_TEXT}'),
+                '${context.palette.colorHints! & PlatformPalette.HINT_SUPPORTS_DARK_TEXT}'),
             Text('HINT_SUPPORTS_DARK_THEME: '
-                '${_platformPalette!.colorHints! & PlatformPalette.HINT_SUPPORTS_DARK_THEME}'),
+                '${context.palette.colorHints! & PlatformPalette.HINT_SUPPORTS_DARK_THEME}'),
           ] else
             Text('No hints available')
         ],
@@ -94,13 +83,13 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
+        key: scaffold,
         appBar: AppBar(
           title: const Text('PaletteFromWallpaper Example'),
+          backgroundColor: context.palette.primaryColor,
         ),
         body: Center(
-          child: _platformPalette != null
-              ? palette(context)
-              : Text(error == null ? 'Loading...' : 'Error: $error'),
+          child: palette(context),
         ),
       ),
     );

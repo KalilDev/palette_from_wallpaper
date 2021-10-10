@@ -21,7 +21,7 @@ import android.os.Handler
 import android.util.Log
 
 // Producing sensor events on Android.// SensorEventListener/EventChannel adapter.
-class WallpaperEventListener(private val activity: Activity) :
+class WallpaperEventListener(private val activity: () -> Activity) :
   EventChannel.StreamHandler, OnColorsChangedListener {
   private var wallpaperManager: WallpaperManager? = null
   private var eventSink: EventChannel.EventSink? = null
@@ -30,7 +30,7 @@ class WallpaperEventListener(private val activity: Activity) :
   override fun onListen(
     arguments: Any?, eventSink: EventChannel.EventSink?) {
     if (this.wallpaperManager == null) {
-      this.wallpaperManager = WallpaperManager.getInstance(activity)
+      this.wallpaperManager = WallpaperManager.getInstance(activity())
     }
     this.eventSink = eventSink
     registerIfActive()
@@ -41,10 +41,17 @@ class WallpaperEventListener(private val activity: Activity) :
   }
 
   // OnColorsChangedListener methods.
-  override fun onColorsChanged(colors: WallpaperColors, which: Int) {
-    if (which and WallpaperManager.FLAG_SYSTEM == WallpaperManager.FLAG_SYSTEM)
+  override fun onColorsChanged(colors: WallpaperColors?, which: Int) {
+    if (which and WallpaperManager.FLAG_SYSTEM != WallpaperManager.FLAG_SYSTEM) {
+      Log.w("WallpaperEventListener", "IGNORED");
       return
-    eventSink?.success(mapFromColors(colors));
+    }
+  
+    if (colors == null) {
+      return
+    }
+    eventSink?.success(mapFromColors(colors!!));
+    Log.w("WallpaperEventListener", "SUCCESS");
   }
 
   // Lifecycle methods.
@@ -86,19 +93,16 @@ class PaletteFromWallpaperPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
   ///
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
   /// when the Flutter Engine is detached from the Activity
-  private lateinit var methodChannel : MethodChannel
+  private lateinit var channel : MethodChannel
   private lateinit var eventChannel : EventChannel
   private var activity: Activity? = null
 
-  private lateinit var wallpaperListener : WallpaperEventListener
-  
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    methodChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "palette_from_wallpaper")
-    methodChannel.setMethodCallHandler(this)
-    
-    wallpaperListener = WallpaperEventListener(activity!!)
-    val eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "UPDATES")
-    eventChannel.setStreamHandler(wallpaperListener)
+    channel = MethodChannel(flutterPluginBinding.binaryMessenger, "package:palette_from_wallpaper/method")
+    channel.setMethodCallHandler(this)
+
+    eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "package:palette_from_wallpaper/events")
+    eventChannel.setStreamHandler(WallpaperEventListener({->activity!!}))
   }
 
   fun preO_MR1GetPaletteMap(): Map<String, Int?> {
@@ -125,7 +129,7 @@ class PaletteFromWallpaperPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
       try {
         result.success(getPaletteMap())
       } catch ( e: Exception) {
-        result.error("UNAVAILABLE_PALLETE", "No palette available:\n" + Log.getStackTraceString(e), null)
+        result.error("UNAVAILABLE_PALLETE", "No palette available!", null)
       }
     } else {
       result.notImplemented()
@@ -133,7 +137,7 @@ class PaletteFromWallpaperPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-    methodChannel.setMethodCallHandler(null)
+    channel.setMethodCallHandler(null)
   }
 
   override fun onAttachedToActivity(@NonNull binding: ActivityPluginBinding) {

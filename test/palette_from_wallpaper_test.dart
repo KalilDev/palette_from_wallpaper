@@ -3,7 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:palette_from_wallpaper/palette_from_wallpaper.dart';
 
 void main() {
-  const MethodChannel channel = MethodChannel('palette_from_wallpaper');
+  const MethodChannel channel =
+      MethodChannel('package:palette_from_wallpaper/method');
+  const EventChannel eventChannel =
+      EventChannel('package:palette_from_wallpaper/events');
 
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -15,9 +18,5 @@ void main() {
 
   tearDown(() {
     channel.setMockMethodCallHandler(null);
-  });
-
-  test('getPlatformVersion', () async {
-    expect(await PaletteFromWallpaper.platformVersion, '42');
   });
 }

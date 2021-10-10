@@ -22,6 +22,7 @@ class _MyAppState extends State<MyApp> {
   final scaffold = GlobalKey<ScaffoldState>();
 
   void dispose() {
+    super.dispose();
     subscription?.cancel();
   }
 

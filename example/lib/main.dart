@@ -6,8 +6,9 @@ import 'package:palette_from_wallpaper/palette_from_wallpaper.dart';
 void main() {
   runPlatformThemedApp(
     MyApp(),
-    onError: (e) => PlatformPalette(primaryColor: Colors.red),
-    initialOrFallback: () => PlatformPalette(primaryColor: Colors.blue),
+    onError: (e) => PlatformPalette.errorHandler(primaryColor: Colors.red),
+    initialOrFallback: () =>
+        PlatformPalette.fallback(primaryColor: Colors.blue),
     startEagerly: true,
   );
 }
@@ -76,7 +77,8 @@ class _MyAppState extends State<MyApp> {
             Text('HINT_SUPPORTS_DARK_THEME: '
                 '${context.palette.colorHints! & PlatformPalette.HINT_SUPPORTS_DARK_THEME}'),
           ] else
-            Text('No hints available')
+            Text('No hints available'),
+          Text('PaletteSource: ${context.palette.source}'),
         ],
       );
 

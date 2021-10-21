@@ -42,30 +42,69 @@ class PaletteFromWallpaper {
   }
 }
 
+/// An enumeration of where did the [PlatformPalette] originate.
+///
+/// This may be useful to know so that the app may choose an more customized
+/// theme in case the source is not the platform for example.
+enum PaletteSource {
+  platform,
+  fallback,
+  errorHandler,
+}
+
+/// The palette of the user's wallpaper originated from the android class
+/// `android.app.WallpaperColors`, computed by the WallpaperManager
 class PlatformPalette {
   factory PlatformPalette._fromMap(Map<dynamic, dynamic> map) {
     final primary = map['primaryColor'] as int;
     final secondary = map['secondaryColor'] as int?;
     final tertiary = map['tertiaryColor'] as int?;
     final colorHints = map['colorHints'] as int?;
-    return PlatformPalette(
+    return PlatformPalette._(
       primaryColor: Color(primary),
       secondaryColor: secondary == null ? null : Color(secondary),
       tertiaryColor: tertiary == null ? null : Color(tertiary),
       colorHints: colorHints,
+      source: PaletteSource.platform,
     );
   }
 
+  const PlatformPalette._({
+    required this.primaryColor,
+    required this.secondaryColor,
+    required this.tertiaryColor,
+    required this.colorHints,
+    required this.source,
+  });
+
+  @Deprecated(
+      'The unnamed constructor was deprecated so that the user is explicit about the source when creating an PlatformPalette object!')
   const PlatformPalette({
     required this.primaryColor,
     this.secondaryColor,
     this.tertiaryColor,
     this.colorHints,
-  });
+  }) : source = PaletteSource.fallback;
+
+  const PlatformPalette.fallback({
+    required this.primaryColor,
+    this.secondaryColor,
+    this.tertiaryColor,
+    this.colorHints,
+  }) : source = PaletteSource.fallback;
+
+  const PlatformPalette.errorHandler({
+    required this.primaryColor,
+    this.secondaryColor,
+    this.tertiaryColor,
+    this.colorHints,
+  }) : source = PaletteSource.errorHandler;
+
   final Color primaryColor;
   final Color? secondaryColor;
   final Color? tertiaryColor;
   final int? colorHints;
+  final PaletteSource source;
 
   /// Specifies that dark text is preferred over the current wallpaper for best
   /// presentation.

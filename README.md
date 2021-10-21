@@ -1,18 +1,21 @@
-# palette_from_wallpaper
+# Palette From Wallpaper
 
-A new flutter plugin project.
+An Flutter plugin for fetching an palette from the device wallpaper on Android
+using the native [android.app.WallpaperManager.getWallpaperColors](https://developer.android.com/reference/android/app/WallpaperManager#getWallpaperColors(int))
+and [android.app.WallpaperManager.OnColorsChangedListener](https://developer.android.com/reference/android/app/WallpaperManager.OnColorsChangedListener)
+apis.
 
-## Getting Started
+It is exposed in the `PaletteFromWallpaper.getPalette` method, and has an
+Stream counterpart for the next `PlatformPalette`s in the
+`PaletteFromWallpaper.paletteUpdates` field.
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+The functionality is also exposed in a more Fluttery api via the
+`runPlatformThemedApp` function, which when called instead of `runApp`, inserts
+an `InheritedPalette` on the root of the tree, and subscribes to the
+`paletteUpdates` stream, always propagating the new palettes to the tree via
+`BuildContext.dependOnInheritedWidgetOfExactType`, so that the app always use
+the most up to date colors from the user wallpaper.
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Example
 
-The plugin project was generated without specifying the `--platforms` flag, no platforms are currently supported.
-To add platforms, run `flutter create -t plugin --platforms <platforms> .` under the same
-directory. You can also find a detailed instruction on how to add platforms in the `pubspec.yaml` at https://flutter.dev/docs/development/packages-and-plugins/developing-packages#plugin-platforms.
+Checkout the [Example app](example/README.md)

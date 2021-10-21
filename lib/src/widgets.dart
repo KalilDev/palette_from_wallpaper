@@ -33,11 +33,14 @@ void runPlatformThemedApp(
   }
   WidgetsFlutterBinding.ensureInitialized();
   if (initialOrFallback == null || !startEagerly) {
-    ArgumentError.checkNotNull(onError);
+    if (initialOrFallback == null) {
+      ArgumentError.checkNotNull(onError);
+    }
     return PaletteFromWallpaper.getPalette(nullOk: initialOrFallback != null)
         .onError<MissingPluginException>(
             (e, s) => throw PlatformException(code: 'MISSING_IMPLEMENTATION'))
-        .onError<PlatformException>((error, stackTrace) => onError!(error))
+        .onError<PlatformException>(
+            (error, stackTrace) => onError?.call(error) ?? initialOrFallback!())
         .then((palette) => _PaletteApp(
               home: home,
               palette: palette ?? initialOrFallback!(),
